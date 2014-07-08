@@ -4,7 +4,7 @@
  * http://mjsarfatti.com/sandbox/nestedSortable
  *
  * Depends on:
- *	 jquery.ui.sortable.js 1.10+
+ *   jquery.ui.sortable.js 1.10+
  *
  * Copyright (c) 2010-2013 Manuele J Sarfatti
  * Licensed under the MIT License
@@ -32,6 +32,7 @@
 			rtl: false,
 			startCollapsed: false,
 			tabSize: 20,
+			comparisonSelector: null,
 
 			branchClass: 'mjs-nestedSortable-branch',
 			collapsedClass: 'mjs-nestedSortable-collapsed',
@@ -153,10 +154,10 @@
 			// mjs - let's start caching some variables
 			var parentItem = (this.placeholder[0].parentNode.parentNode &&
 							 $(this.placeholder[0].parentNode.parentNode).closest('.ui-sortable').length)
-				       			? $(this.placeholder[0].parentNode.parentNode)
-				       			: null,
-			    level = this._getLevel(this.placeholder),
-			    childLevels = this._getChildLevels(this.helper);
+										? $(this.placeholder[0].parentNode.parentNode)
+										: null,
+					level = this._getLevel(this.placeholder),
+					childLevels = this._getChildLevels(this.helper);
 
 			var newList = document.createElement(o.listType);
 
@@ -182,7 +183,7 @@
 					continue;
 				}
 
-				// No action if intersected item is disabled 
+				// No action if intersected item is disabled
 				// and the element above or below in the direction we're going is also disabled
 				if (itemElement.className.indexOf(o.disabledClass) !== -1) {
 					// Note: intersection hardcoded direction values from jquery.ui.sortable.js:_intersectsWithPointer
@@ -192,7 +193,7 @@
 						if (itemAfter && itemAfter.item[0].className.indexOf(o.disabledClass) !== -1){
 							continue;
 						}
-						
+
 					}
 					else if (intersection === 1) {
 						// Going up
@@ -245,10 +246,10 @@
 						// or if it's not a root item but we are trying to make it root
 						if (o.protectRoot
 							&& ! (this.currentItem[0].parentNode == this.element[0] // it's a root item
-								  && itemElement.parentNode != this.element[0]) // it's intersecting a non-root item
+									&& itemElement.parentNode != this.element[0]) // it's intersecting a non-root item
 						) {
 							if (this.currentItem[0].parentNode != this.element[0]
-							   	&& itemElement.parentNode == this.element[0]
+									&& itemElement.parentNode == this.element[0]
 							) {
 
 								if ( ! $(itemElement).children(o.listType).length) {
@@ -292,6 +293,12 @@
 				}
 			}
 
+			if(previousItem != null && this.options.comparisonSelector != null){
+				var comparisonItem = previousItem.find(this.options.comparisonSelector);
+			} else {
+				var comparisonItem = previousItem;
+			}
+
 			// mjs - to find the next sibling in the list, keep stepping forward until we hit a valid list item.
 			var nextItem = this.placeholder[0].nextSibling ? $(this.placeholder[0].nextSibling) : null;
 			if (nextItem != null) {
@@ -319,7 +326,7 @@
 				parentItem.after(this.placeholder[0]);
 				if (o.isTree && parentItem.children(o.listItem).children('li:visible:not(.ui-sortable-helper)').length < 1) {
 					parentItem.removeClass(this.options.branchClass + ' ' + this.options.expandedClass)
-							  .addClass(this.options.leafClass);
+								.addClass(this.options.leafClass);
 				}
 				this._clearEmpty(parentItem[0]);
 				this._trigger("change", event, this._uiHash());
@@ -332,8 +339,8 @@
 						 || ! previousItem.children(o.listType).length)
 					 && ! (o.protectRoot && this.currentItem[0].parentNode == this.element[0])
 					 &&
-						(o.rtl && (this.positionAbs.left + this.helper.outerWidth() < previousItem.offset().left + previousItem.outerWidth() - o.tabSize)
-						 || ! o.rtl && (this.positionAbs.left > previousItem.offset().left + o.tabSize))
+						(o.rtl && (this.positionAbs.left + this.helper.outerWidth() < comparisonItem.offset().left + comparisonItem.outerWidth() - o.tabSize)
+						 || ! o.rtl && (this.positionAbs.left > comparisonItem.offset().left + o.tabSize))
 			) {
 
 				this._isAllowed(previousItem, level, level+childLevels+1);
@@ -343,12 +350,12 @@
 					o.isTree && previousItem.removeClass(o.leafClass).addClass(o.branchClass + ' ' + o.expandedClass);
 				}
 
-		        // mjs - if this item is being moved from the top, add it to the top of the list.
-		        if (previousTopOffset && (previousTopOffset <= previousItem.offset().top)) {
-		        	previousItem.children(o.listType).prepend(this.placeholder);
-		        }
-		        // mjs - otherwise, add it to the bottom of the list.
-		        else {
+				// mjs - if this item is being moved from the top, add it to the top of the list.
+				if (previousTopOffset && (previousTopOffset <= previousItem.offset().top)) {
+					previousItem.children(o.listType).prepend(this.placeholder);
+				}
+				// mjs - otherwise, add it to the bottom of the list.
+				else {
 					previousItem.children(o.listType)[0].appendChild(this.placeholder[0]);
 				}
 
@@ -399,11 +406,11 @@
 			this.hovering = null;
 
 			$.ui.sortable.prototype._mouseStop.apply(this, arguments);
-			
+
 			var pid = this.placeholder.parent().attr("id");
 			var sort = this.placeholder.parent().children().index(this.placeholder);
-			
-			if(!(pid == this._uiHash().item.parent().parent().attr("id") && 
+
+			if(!(pid == this._uiHash().item.parent().parent().attr("id") &&
 				sort == this._uiHash().item.index())) {
 				this._trigger("relocate", event, this._uiHash());
 			}
@@ -455,12 +462,12 @@
 
 			var o = $.extend({}, this.options, options),
 				items = this._getItemsAsjQuery(o && o.connected),
-			    str = [];
+					str = [];
 
 			$(items).each(function() {
 				var res = ($(o.item || this).attr(o.attribute || 'id') || '')
 						.match(o.expression || (/(.+)[-=_](.+)/)),
-				    pid = ($(o.item || this).parent(o.listType)
+						pid = ($(o.item || this).parent(o.listType)
 						.parent(o.items)
 						.attr(o.attribute || 'id') || '')
 						.match(o.expression || (/(.+)[-=_](.+)/));
@@ -484,7 +491,7 @@
 
 			var o = $.extend({}, this.options, options),
 				sDepth = o.startDepthCount || 0,
-			    ret = [];
+					ret = [];
 
 			$(this.element).children(o.items).each(function () {
 				var level = _recursiveItems(this);
@@ -513,8 +520,8 @@
 
 			var o = $.extend({}, this.options, options),
 				sDepth = o.startDepthCount || 0,
-			    ret = [],
-			    left = 1;
+					ret = [],
+					left = 1;
 
 			if (!o.excludeRoot) {
 				ret.push({
@@ -538,8 +545,8 @@
 			function _recursiveArray(item, depth, left) {
 
 				var right = left + 1,
-				    id,
-				    pid;
+						id,
+						pid;
 
 				if ($(item).children(o.listType).children(o.items).length > 0) {
 					depth ++;
@@ -594,7 +601,7 @@
 			if (this.options.listType) {
 				var list = item.closest(this.options.listType);
 				while (list && list.length > 0 &&
-                    	!list.is('.ui-sortable')) {
+											!list.is('.ui-sortable')) {
 					level++;
 					list = list.parent().closest(this.options.listType);
 				}
@@ -605,8 +612,8 @@
 
 		_getChildLevels: function(parent, depth) {
 			var self = this,
-			    o = this.options,
-			    result = 0;
+					o = this.options,
+					result = 0;
 			depth = depth || 0;
 
 			$(parent).children(o.listType).children(o.items).each(function (index, child) {
@@ -624,8 +631,8 @@
 			var oldParent = this.currentItem.parent().parent();
 			var disabledByParentchange = o.disableParentChange && (
 				parentItem !== null && !oldParent.is(parentItem)//From somewhere to somewhere else, except the root
-			||	parentItem === null && oldParent.is('li')	//From somewhere to the root
-                        );
+			||  parentItem === null && oldParent.is('li') //From somewhere to the root
+												);
 			// mjs - is the root protected?
 			// mjs - are we nesting too deep?
 			if (disabledByParentchange || ! o.isAllowed(this.placeholder, parentItem, this.currentItem)) {
